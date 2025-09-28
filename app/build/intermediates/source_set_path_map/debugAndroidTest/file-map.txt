@@ -1,0 +1,6 @@
+com.example.autoclick.test.app-jetified-annotation-experimental-1.3.0-0 C:\Users\Administrator\.gradle\caches\transforms-3\59e033973602d68d0227d649bdc18339\transformed\jetified-annotation-experimental-1.3.0\res
+com.example.autoclick.test.app-jetified-core-1.5.0-1 C:\Users\Administrator\.gradle\caches\transforms-3\cea4fd2b9886aa5de33330e0198000e1\transformed\jetified-core-1.5.0\res
+com.example.autoclick.test.app-androidTest-2 D:\Program Files\auto click\app\build\generated\res\resValues\androidTest\debug
+com.example.autoclick.test.app-mergeDebugAndroidTestResources-3 D:\Program Files\auto click\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
+com.example.autoclick.test.app-mergeDebugAndroidTestResources-4 D:\Program Files\auto click\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
+com.example.autoclick.test.app-merged_res-5 D:\Program Files\auto click\app\build\intermediates\merged_res\debugAndroidTest

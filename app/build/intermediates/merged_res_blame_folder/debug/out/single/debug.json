@@ -1,0 +1,54 @@
+[
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/xml_accessibility_service.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/xml/accessibility_service.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/layout_overlay_countdown.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/layout/overlay_countdown.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/drawable_countdown_bg.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/drawable/countdown_bg.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/drawable_click_marker.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/drawable/click_marker.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/xml_backup_rules.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/layout_click_marker.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/layout/click_marker.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/layout_activity_main.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/layout_coordinate_input.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/layout/coordinate_input.xml"
+    },
+    {
+        "merged": "com.example.autoclick.app-merged_res-20:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.example.autoclick.app-main-22:/drawable/ic_launcher_foreground.xml"
+    }
+]
