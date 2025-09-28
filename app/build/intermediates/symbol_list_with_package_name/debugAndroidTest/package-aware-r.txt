@@ -1,3 +1,0 @@
-com.example.autoclick.test
-style WhiteBackgroundDialogTheme
-style WhiteBackgroundTheme

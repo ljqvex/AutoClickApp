@@ -45,8 +45,10 @@ public class ScheduleKeepAliveService extends Service {
             clickX = intent.getIntExtra("clickX", 0);
             clickY = intent.getIntExtra("clickY", 0);
             clickCount = intent.getIntExtra("clickCount", 1);
-            baseInterval = intent.getIntExtra("baseInterval", 1000);
+            baseInterval = intent.getIntExtra("baseInterval", 300);
             randomRange = intent.getIntExtra("randomRange", 0);
+            
+            System.out.println("接收到参数: 点击次数=" + clickCount + ", 基础间隔=" + baseInterval + "ms, 随机范围=" + randomRange + "ms");
             
             if (targetTime > 0) {
                 startForegroundService();
@@ -110,23 +112,32 @@ public class ScheduleKeepAliveService extends Service {
 
     private void executeClickSequence(int currentClick) {
         if (currentClick >= clickCount) {
-            handler.postDelayed(() -> {
-                Intent broadcastIntent = new Intent("com.example.autoclick.TASK_COMPLETED");
-                sendBroadcast(broadcastIntent);
-                stopSelf();
-            }, 2000);
+            // 所有点击完成，立即发送完成广播并停止服务
+            System.out.println("所有点击完成，立即停止服务");
+            Intent broadcastIntent = new Intent("com.example.autoclick.TASK_COMPLETED");
+            sendBroadcast(broadcastIntent);
+            stopSelf();
             return;
         }
 
+        // 执行当前点击
         AutoClickService.performClickAt(clickX, clickY);
+        System.out.println("执行第 " + (currentClick + 1) + " 次点击");
 
+        // 如果还有下次点击，计算延迟时间
         if (currentClick + 1 < clickCount) {
             int nextDelay = baseInterval;
+            
+            // 如果有随机范围，使用随机间隔
             if (randomRange > 0) {
-                nextDelay += random.nextInt(randomRange);
+                // 在基础间隔基础上增加随机时间
+                nextDelay += random.nextInt(randomRange + 1);
             }
+            
+            System.out.println("下一次点击延迟: " + nextDelay + "ms (基础: " + baseInterval + "ms, 随机: " + (nextDelay - baseInterval) + "ms)");
             handler.postDelayed(() -> executeClickSequence(currentClick + 1), nextDelay);
         } else {
+            // 最后一次点击，直接完成
             executeClickSequence(currentClick + 1);
         }
     }

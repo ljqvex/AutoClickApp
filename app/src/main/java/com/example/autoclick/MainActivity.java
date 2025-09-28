@@ -11,6 +11,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,11 +31,12 @@ public class MainActivity extends AppCompatActivity {
 
     private int clickX = 0, clickY = 0;
     private long targetTimeMillis = 0;
+    private boolean isTaskRunning = false;
 
     // 点击参数
     private int totalClickCount = 1;
-    private int baseInterval = 1000;
-    private int randomRange = 0;
+    private int baseInterval = 300;
+    private int randomRange = 200;
     private Random random = new Random();
 
     // Handler 用于定时任务
@@ -52,6 +55,12 @@ public class MainActivity extends AppCompatActivity {
 
                 // 停止坐标捕获服务
                 stopService(new Intent(MainActivity.this, CoordinateCaptureService.class));
+                
+                // 显示点击标记
+                Intent markerIntent = new Intent(MainActivity.this, ClickMarkerService.class);
+                markerIntent.putExtra("clickX", clickX);
+                markerIntent.putExtra("clickY", clickY);
+                startService(markerIntent);
             }
         }
     };
@@ -64,6 +73,12 @@ public class MainActivity extends AppCompatActivity {
                 updateStatus("所有点击已完成");
                 btnStopClick.setVisibility(View.GONE);
                 btnScheduleClick.setEnabled(true);
+                btnGetCoordinates.setEnabled(true);
+                isTaskRunning = false;
+                
+                // 自动清除标记和倒计时
+                stopService(new Intent(MainActivity.this, ClickMarkerService.class));
+                stopService(new Intent(MainActivity.this, CountdownOverlayService.class));
             }
         }
     };
@@ -156,28 +171,49 @@ public class MainActivity extends AppCompatActivity {
         btnClearMarker.setOnClickListener(this::onClearMarkerClick);
 
         // 点击次数变化监听
-        etClickCount.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) {
+        etClickCount.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
                 updateIntervalVisibility();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
             }
         });
     }
 
     private void setDefaultValues() {
-        etHour.setText("0");
-        etMinute.setText("0");
-        etSecond.setText("10");
+        // 设置当前时间加10秒作为默认时间
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, 10);
+        
+        etHour.setText(String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.HOUR_OF_DAY)));
+        etMinute.setText(String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.MINUTE)));
+        etSecond.setText(String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.SECOND)));
         etMillisecond.setText("0");
         etClickCount.setText("1");
-        etClickInterval.setText("1000");
-        etRandomRange.setText("0");
+        etClickInterval.setText("300");
+        etRandomRange.setText("200");
         updateIntervalVisibility();
     }
 
     private void updateIntervalVisibility() {
         try {
-            int count = Integer.parseInt(etClickCount.getText().toString());
+            String countText = etClickCount.getText().toString();
+            if (countText.isEmpty()) {
+                layoutInterval.setVisibility(View.GONE);
+                return;
+            }
+            
+            int count = Integer.parseInt(countText);
+            // 大于1次就显示间隔设置
             layoutInterval.setVisibility(count > 1 ? View.VISIBLE : View.GONE);
+            System.out.println("点击次数: " + count + ", 间隔设置可见性: " + (count > 1));
         } catch (NumberFormatException e) {
             layoutInterval.setVisibility(View.GONE);
         }
@@ -200,6 +236,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onGetCoordinatesClick(View view) {
+        if (isTaskRunning) {
+            showToast("任务进行中，无法更改坐标");
+            return;
+        }
+        
         if (!checkOverlayPermission()) {
             requestOverlayPermission();
             return;
@@ -208,8 +249,14 @@ public class MainActivity extends AppCompatActivity {
         // 清除之前的标记
         stopService(new Intent(this, ClickMarkerService.class));
 
-        // 启动坐标捕获
-        startService(new Intent(this, CoordinateCaptureService.class));
+        // 先最小化应用
+        moveTaskToBack(true);
+        
+        // 延迟启动坐标捕获，确保应用已最小化
+        mainHandler.postDelayed(() -> {
+            startService(new Intent(this, CoordinateCaptureService.class));
+        }, 500);
+        
         updateStatus("请点击屏幕选择坐标");
     }
 
@@ -244,13 +291,27 @@ public class MainActivity extends AppCompatActivity {
         updateStatus("已停止所有操作");
         btnStopClick.setVisibility(View.GONE);
         btnScheduleClick.setEnabled(true);
+        btnGetCoordinates.setEnabled(true);
+        isTaskRunning = false;
+        
+        // 清除标记和倒计时
+        stopService(new Intent(this, ClickMarkerService.class));
+        stopService(new Intent(this, CountdownOverlayService.class));
     }
 
     private void onClearMarkerClick(View view) {
+        if (isTaskRunning) {
+            showToast("任务进行中，无法清除标记");
+            return;
+        }
+        
         // 清除所有标记和服务
         stopService(new Intent(this, ClickMarkerService.class));
         stopService(new Intent(this, CoordinateCaptureService.class));
         stopService(new Intent(this, CountdownOverlayService.class));
+        clickX = 0;
+        clickY = 0;
+        tvCoordinates.setText("坐标: 未设置");
         updateStatus("已清除所有标记");
     }
 
@@ -300,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
             baseInterval = Integer.parseInt(etClickInterval.getText().toString());
             randomRange = Integer.parseInt(etRandomRange.getText().toString());
         } else {
-            baseInterval = 1000;
+            baseInterval = 300;
             randomRange = 0;
         }
     }
@@ -324,6 +385,9 @@ public class MainActivity extends AppCompatActivity {
     private void startScheduledClick() {
         // 停止之前的任务
         stopAllOperations();
+        
+        isTaskRunning = true;
+        btnGetCoordinates.setEnabled(false);
 
         long delay = targetTimeMillis - System.currentTimeMillis();
 
@@ -332,7 +396,7 @@ public class MainActivity extends AppCompatActivity {
         countdownIntent.putExtra("target_time", targetTimeMillis);
         startService(countdownIntent);
 
-        // 显示点击标记
+        // 确保显示点击标记
         Intent markerIntent = new Intent(this, ClickMarkerService.class);
         markerIntent.putExtra("clickX", clickX);
         markerIntent.putExtra("clickY", clickY);
@@ -354,6 +418,9 @@ public class MainActivity extends AppCompatActivity {
         btnStopClick.setVisibility(View.VISIBLE);
         btnScheduleClick.setEnabled(false);
 
+        // 最小化应用
+        moveTaskToBack(true);
+
         System.out.println("安排点击任务，延迟: " + delay + "ms，目标时间: " + targetTimeMillis);
     }
 
@@ -365,7 +432,6 @@ public class MainActivity extends AppCompatActivity {
 
         // 停止所有服务
         stopService(new Intent(this, CountdownOverlayService.class));
-        stopService(new Intent(this, ClickMarkerService.class));
         stopService(new Intent(this, CoordinateCaptureService.class));
         stopService(new Intent(this, ScheduleKeepAliveService.class));
 

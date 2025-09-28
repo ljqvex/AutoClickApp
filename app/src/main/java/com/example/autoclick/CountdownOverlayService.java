@@ -9,7 +9,6 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.provider.Settings;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -73,9 +72,10 @@ public class CountdownOverlayService extends Service {
             tvCountdown = new TextView(this);
             tvCountdown.setText("倒计时");
             tvCountdown.setTextColor(0xFFFFFFFF);
-            tvCountdown.setTextSize(16);
-            tvCountdown.setBackgroundColor(0x80000000);
-            tvCountdown.setPadding(20, 10, 20, 10);
+            tvCountdown.setTextSize(18);
+            tvCountdown.setBackgroundColor(0x99333333); // 浅灰黑背景
+            tvCountdown.setPadding(30, 15, 30, 15);
+            tvCountdown.setGravity(Gravity.CENTER);
 
             // 设置窗口参数
             WindowManager.LayoutParams params;
@@ -99,9 +99,9 @@ public class CountdownOverlayService extends Service {
                 );
             }
 
-            params.gravity = Gravity.TOP | Gravity.START;
-            params.x = 100;
-            params.y = 100;
+            // 设置为顶部正中
+            params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+            params.y = 50; // 距离顶部50像素
 
             overlayView = tvCountdown;
             windowManager.addView(overlayView, params);
@@ -121,24 +121,17 @@ public class CountdownOverlayService extends Service {
                 long remainingTime = targetTime - currentTime;
 
                 if (remainingTime <= 0) {
-                    // 倒计时结束
-                    if (tvCountdown != null) {
-                        tvCountdown.setText("执行中...");
-                    }
-                    System.out.println("倒计时结束");
-
-                    // 2秒后自动关闭
-                    handler.postDelayed(() -> {
-                        stopSelf();
-                    }, 2000);
+                    // 倒计时结束，立即关闭
+                    System.out.println("倒计时结束，立即关闭");
+                    stopSelf();
                     return;
                 }
 
                 // 更新倒计时显示
                 updateCountdownDisplay(remainingTime);
 
-                // 安排下次更新（每100毫秒更新一次）
-                handler.postDelayed(this, 100);
+                // 安排下次更新（每50毫秒更新一次，减少延迟）
+                handler.postDelayed(this, 50);
             }
         };
 
