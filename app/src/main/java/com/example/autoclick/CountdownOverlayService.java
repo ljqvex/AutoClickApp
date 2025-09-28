@@ -28,7 +28,7 @@ public class CountdownOverlayService extends Service {
         super.onCreate();
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         handler = new Handler(Looper.getMainLooper());
-        System.out.println("CountdownOverlayService 创建");
+        
     }
 
     @Override
@@ -38,7 +38,7 @@ public class CountdownOverlayService extends Service {
             if (targetTime > 0) {
                 createOverlayView();
                 startCountdown();
-                System.out.println("倒计时开始，目标时间: " + targetTime);
+                
             }
         }
         return START_NOT_STICKY;
@@ -51,7 +51,7 @@ public class CountdownOverlayService extends Service {
         if (handler != null && countdownRunnable != null) {
             handler.removeCallbacks(countdownRunnable);
         }
-        System.out.println("CountdownOverlayService 销毁");
+        
     }
 
     @Override
@@ -61,7 +61,7 @@ public class CountdownOverlayService extends Service {
 
     private void createOverlayView() {
         if (!checkOverlayPermission()) {
-            System.out.println("没有悬浮窗权限，无法显示倒计时");
+            
             return;
         }
 
@@ -101,10 +101,10 @@ public class CountdownOverlayService extends Service {
             params.y = 50; // 距离顶部50像素
 
             windowManager.addView(overlayView, params);
-            System.out.println("倒计时悬浮窗已创建");
+            
 
         } catch (Exception e) {
-            System.out.println("创建倒计时悬浮窗失败: " + e.getMessage());
+            
             e.printStackTrace();
         }
     }
@@ -118,7 +118,7 @@ public class CountdownOverlayService extends Service {
 
                 if (remainingTime <= 0) {
                     // 倒计时结束，立即关闭
-                    System.out.println("倒计时结束，立即关闭");
+                    
                     stopSelf();
                     return;
                 }
@@ -172,9 +172,9 @@ public class CountdownOverlayService extends Service {
         if (overlayView != null && windowManager != null) {
             try {
                 windowManager.removeView(overlayView);
-                System.out.println("倒计时悬浮窗已移除");
+                
             } catch (Exception e) {
-                System.out.println("移除倒计时悬浮窗失败: " + e.getMessage());
+                
             }
             overlayView = null;
             tvCountdown = null;

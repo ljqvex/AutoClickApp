@@ -20,7 +20,7 @@ public class ClickMarkerService extends Service {
     public void onCreate() {
         super.onCreate();
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        System.out.println("ClickMarkerService 创建");
+        
     }
 
     @Override
@@ -30,7 +30,7 @@ public class ClickMarkerService extends Service {
             int y = intent.getIntExtra("clickY", 0);
             if (x > 0 || y > 0) {
                 showMarker(x, y);
-                System.out.println("显示点击标记在: (" + x + ", " + y + ")");
+                
             }
         }
         return START_NOT_STICKY;
@@ -40,7 +40,7 @@ public class ClickMarkerService extends Service {
     public void onDestroy() {
         super.onDestroy();
         removeMarker();
-        System.out.println("ClickMarkerService 销毁");
+        
     }
 
     @Override
@@ -50,7 +50,7 @@ public class ClickMarkerService extends Service {
 
     private void showMarker(int x, int y) {
         if (!checkOverlayPermission()) {
-            System.out.println("没有悬浮窗权限，无法显示点击标记");
+            
             return;
         }
 
@@ -101,10 +101,10 @@ public class ClickMarkerService extends Service {
             params.y = y - markerHeight / 2;
 
             windowManager.addView(markerView, params);
-            System.out.println("点击标记已显示，实际尺寸: " + markerWidth + "x" + markerHeight + "，位置: (" + params.x + ", " + params.y + ")");
+            
 
         } catch (Exception e) {
-            System.out.println("显示点击标记失败: " + e.getMessage());
+            
             e.printStackTrace();
         }
     }
@@ -113,9 +113,9 @@ public class ClickMarkerService extends Service {
         if (markerView != null && windowManager != null) {
             try {
                 windowManager.removeView(markerView);
-                System.out.println("点击标记已移除");
+                
             } catch (Exception e) {
-                System.out.println("移除点击标记失败: " + e.getMessage());
+                
             }
             markerView = null;
         }

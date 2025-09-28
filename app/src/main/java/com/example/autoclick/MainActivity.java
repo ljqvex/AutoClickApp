@@ -35,8 +35,8 @@ public class MainActivity extends AppCompatActivity {
 
     // 点击参数
     private int totalClickCount = 1;
-    private int baseInterval = 300;
-    private int randomRange = 200;
+    private int baseInterval = 200;
+    private int randomRange = 100;
     private Random random = new Random();
 
     // Handler 用于定时任务
@@ -196,9 +196,9 @@ public class MainActivity extends AppCompatActivity {
         etMinute.setText(String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.MINUTE)));
         etSecond.setText(String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.SECOND)));
         etMillisecond.setText("0");
-        etClickCount.setText("1");
-        etClickInterval.setText("300");
-        etRandomRange.setText("200");
+        etClickCount.setText("5");
+        etClickInterval.setText("200");
+        etRandomRange.setText("100");
         updateIntervalVisibility();
     }
 

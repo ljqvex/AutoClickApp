@@ -23,7 +23,7 @@ public class AutoClickService extends AccessibilityService {
         instance = this;
         createNotificationChannel();
         showServiceNotification();
-        System.out.println("AutoClickService 已连接");
+        
     }
 
     @Override
@@ -33,23 +33,23 @@ public class AutoClickService extends AccessibilityService {
 
     @Override
     public void onInterrupt() {
-        System.out.println("AutoClickService 被中断");
+        
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         instance = null;
-        System.out.println("AutoClickService 已销毁");
+        
     }
 
     public static boolean performClickAt(int x, int y) {
         if (instance == null) {
-            System.out.println("AutoClickService 实例为空，无法执行点击");
+            
             return false;
         }
 
-        System.out.println("执行点击坐标: (" + x + ", " + y + ")");
+        
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
@@ -65,25 +65,25 @@ public class AutoClickService extends AccessibilityService {
                     @Override
                     public void onCompleted(GestureDescription gestureDescription) {
                         super.onCompleted(gestureDescription);
-                        System.out.println("点击手势执行完成");
+                        
                     }
 
                     @Override
                     public void onCancelled(GestureDescription gestureDescription) {
                         super.onCancelled(gestureDescription);
-                        System.out.println("点击手势被取消");
+                        
                     }
                 }, null);
 
-                System.out.println("点击手势分发结果: " + result);
+                
                 return result;
             } catch (Exception e) {
-                System.out.println("执行点击失败: " + e.getMessage());
+                
                 e.printStackTrace();
                 return false;
             }
         } else {
-            System.out.println("Android 版本不支持手势分发 (需要 API 24+)");
+            
             return false;
         }
     }
@@ -104,10 +104,10 @@ public class AutoClickService extends AccessibilityService {
 
             String serviceName = context.getPackageName() + "/" + AutoClickService.class.getName();
             boolean enabled = enabledServices.contains(serviceName);
-            System.out.println("无障碍服务状态检查: " + enabled + ", 服务名: " + serviceName);
+            
             return enabled;
         } catch (Exception e) {
-            System.out.println("检查无障碍服务状态失败: " + e.getMessage());
+            
             return false;
         }
     }
@@ -145,7 +145,7 @@ public class AutoClickService extends AccessibilityService {
 
             startForeground(NOTIFICATION_ID, builder.build());
         } catch (Exception e) {
-            System.out.println("显示服务通知失败: " + e.getMessage());
+            
         }
     }
 }

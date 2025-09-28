@@ -37,7 +37,7 @@ public class ScheduleKeepAliveService extends Service {
             if ("coordinate_updated".equals(intent.getAction())) {
                 clickX = intent.getIntExtra("x", clickX);
                 clickY = intent.getIntExtra("y", clickY);
-                System.out.println("ScheduleKeepAliveService 更新坐标: (" + clickX + ", " + clickY + ")");
+                
             }
         }
     };
@@ -57,7 +57,7 @@ public class ScheduleKeepAliveService extends Service {
             registerReceiver(coordinateReceiver, filter);
         }
 
-        System.out.println("ScheduleKeepAliveService 已创建");
+        
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ScheduleKeepAliveService extends Service {
             baseInterval = intent.getIntExtra("baseInterval", 300);
             randomRange = intent.getIntExtra("randomRange", 0);
 
-            System.out.println("接收到参数: 坐标(" + clickX + "," + clickY + "), 点击次数=" + clickCount + ", 基础间隔=" + baseInterval + "ms, 随机范围=" + randomRange + "ms");
+            
 
             if (targetTime > 0) {
                 startForegroundService();
@@ -102,7 +102,7 @@ public class ScheduleKeepAliveService extends Service {
                 .build();
 
         startForeground(NOTIFICATION_ID, notification);
-        System.out.println("前台服务已启动");
+        
     }
 
     private void scheduleExecution() {
@@ -129,14 +129,14 @@ public class ScheduleKeepAliveService extends Service {
             return;
         }
 
-        System.out.println("开始执行点击序列，使用实时坐标");
+        
         executeClickSequence(0);
     }
 
     private void executeClickSequence(int currentClick) {
         if (currentClick >= clickCount) {
             // 所有点击完成后，先关闭悬浮窗，再停止服务
-            System.out.println("所有点击完成，开始清理悬浮窗");
+            
 
             // 发送关闭悬浮窗的指令
             Intent closeCountdownIntent = new Intent(this, CountdownOverlayService.class);
@@ -154,17 +154,17 @@ public class ScheduleKeepAliveService extends Service {
 
             // 延迟一下再停止服务，确保悬浮窗关闭完成
             handler.postDelayed(() -> {
-                System.out.println("任务完成，停止服务");
+                
                 stopSelf();
             }, 500);
             return;
         }
 
         // 每次点击前都使用最新的坐标（可能被拖拽标记更新）
-        System.out.println("准备执行第 " + (currentClick + 1) + "/" + clickCount + " 次点击，当前坐标: (" + clickX + ", " + clickY + ")");
+        
 
         boolean success = AutoClickService.performClickAt(clickX, clickY);
-        System.out.println("执行第 " + (currentClick + 1) + "/" + clickCount + " 次点击完成，结果: " + success);
+        
 
         // 如果还有下次点击，计算延迟时间
         if (currentClick + 1 < clickCount) {
@@ -176,7 +176,7 @@ public class ScheduleKeepAliveService extends Service {
                 nextDelay += random.nextInt(randomRange + 1);
             }
 
-            System.out.println("下一次点击延迟: " + nextDelay + "ms (基础: " + baseInterval + "ms, 随机: " + (nextDelay - baseInterval) + "ms)");
+            
             handler.postDelayed(() -> executeClickSequence(currentClick + 1), nextDelay);
         } else {
             // 最后一次点击，直接递归调用完成
@@ -212,7 +212,7 @@ public class ScheduleKeepAliveService extends Service {
             // 忽略
         }
 
-        System.out.println("ScheduleKeepAliveService 已销毁");
+        
     }
 
     @Override

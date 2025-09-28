@@ -27,12 +27,12 @@ public class CoordinateCaptureService extends Service {
         super.onCreate();
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         createOverlayView();
-        System.out.println("CoordinateCaptureService 创建");
+        
     }
 
     private void createOverlayView() {
         if (!checkOverlayPermission()) {
-            System.out.println("没有悬浮窗权限，无法显示坐标捕获界面");
+            
             stopSelf();
             return;
         }
@@ -58,7 +58,7 @@ public class CoordinateCaptureService extends Service {
                         broadcastIntent.putExtra("y", y);
                         sendBroadcast(broadcastIntent);
                         
-                        System.out.println("坐标已捕获并发送: (" + x + ", " + y + ")");
+                        
 
                         // 返回应用
                         Intent backIntent = new Intent(getApplicationContext(), MainActivity.class);
@@ -90,10 +90,10 @@ public class CoordinateCaptureService extends Service {
             
             params.gravity = Gravity.TOP | Gravity.LEFT;
             windowManager.addView(overlayView, params);
-            System.out.println("坐标捕获界面已显示");
+            
             
         } catch (Exception e) {
-            System.out.println("创建坐标捕获界面失败: " + e.getMessage());
+            
             e.printStackTrace();
             stopSelf();
         }
@@ -105,12 +105,12 @@ public class CoordinateCaptureService extends Service {
         if (overlayView != null && windowManager != null) {
             try {
                 windowManager.removeView(overlayView);
-                System.out.println("坐标捕获界面已移除");
+                
             } catch (Exception e) {
-                System.out.println("移除坐标捕获界面失败: " + e.getMessage());
+                
             }
         }
-        System.out.println("CoordinateCaptureService 销毁");
+        
     }
 
     private boolean checkOverlayPermission() {
