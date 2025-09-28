@@ -5,29 +5,42 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import androidx.core.app.NotificationCompat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 import java.util.Random;
 
 public class ScheduleKeepAliveService extends Service {
     private static final String CHANNEL_ID = "ScheduleKeepAliveChannel";
     private static final int NOTIFICATION_ID = 2001;
-    
+
     private Handler handler;
     private Runnable scheduleRunnable;
     private long targetTime;
-    private int clickX, clickY;
+    private int clickX, clickY; // 实时更新的坐标
     private int clickCount;
     private int baseInterval;
     private int randomRange;
     private Random random;
+
+    // 坐标更新接收器
+    private BroadcastReceiver coordinateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("coordinate_updated".equals(intent.getAction())) {
+                clickX = intent.getIntExtra("x", clickX);
+                clickY = intent.getIntExtra("y", clickY);
+                System.out.println("ScheduleKeepAliveService 更新坐标: (" + clickX + ", " + clickY + ")");
+            }
+        }
+    };
 
     @Override
     public void onCreate() {
@@ -35,6 +48,15 @@ public class ScheduleKeepAliveService extends Service {
         createNotificationChannel();
         handler = new Handler(Looper.getMainLooper());
         random = new Random();
+
+        // 注册坐标更新广播接收器
+        IntentFilter filter = new IntentFilter("coordinate_updated");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(coordinateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(coordinateReceiver, filter);
+        }
+
         System.out.println("ScheduleKeepAliveService 已创建");
     }
 
@@ -47,15 +69,15 @@ public class ScheduleKeepAliveService extends Service {
             clickCount = intent.getIntExtra("clickCount", 1);
             baseInterval = intent.getIntExtra("baseInterval", 300);
             randomRange = intent.getIntExtra("randomRange", 0);
-            
-            System.out.println("接收到参数: 点击次数=" + clickCount + ", 基础间隔=" + baseInterval + "ms, 随机范围=" + randomRange + "ms");
-            
+
+            System.out.println("接收到参数: 坐标(" + clickX + "," + clickY + "), 点击次数=" + clickCount + ", 基础间隔=" + baseInterval + "ms, 随机范围=" + randomRange + "ms");
+
             if (targetTime > 0) {
                 startForegroundService();
                 scheduleExecution();
             }
         }
-        
+
         return START_STICKY;
     }
 
@@ -85,19 +107,19 @@ public class ScheduleKeepAliveService extends Service {
 
     private void scheduleExecution() {
         long delay = targetTime - System.currentTimeMillis();
-        
+
         if (delay <= 0) {
             executeClick();
             return;
         }
-        
+
         scheduleRunnable = new Runnable() {
             @Override
             public void run() {
                 executeClick();
             }
         };
-        
+
         handler.postDelayed(scheduleRunnable, delay);
     }
 
@@ -106,39 +128,59 @@ public class ScheduleKeepAliveService extends Service {
             stopSelf();
             return;
         }
-        
+
+        System.out.println("开始执行点击序列，使用实时坐标");
         executeClickSequence(0);
     }
 
     private void executeClickSequence(int currentClick) {
         if (currentClick >= clickCount) {
-            // 所有点击完成，立即发送完成广播并停止服务
-            System.out.println("所有点击完成，立即停止服务");
+            // 所有点击完成后，先关闭悬浮窗，再停止服务
+            System.out.println("所有点击完成，开始清理悬浮窗");
+
+            // 发送关闭悬浮窗的指令
+            Intent closeCountdownIntent = new Intent(this, CountdownOverlayService.class);
+            stopService(closeCountdownIntent);
+
+            Intent closeMarkerIntent = new Intent(this, ClickMarkerService.class);
+            stopService(closeMarkerIntent);
+
+            Intent closeDragMarkerIntent = new Intent(this, DraggableMarkerService.class);
+            stopService(closeDragMarkerIntent);
+
+            // 发送完成广播
             Intent broadcastIntent = new Intent("com.example.autoclick.TASK_COMPLETED");
             sendBroadcast(broadcastIntent);
-            stopSelf();
+
+            // 延迟一下再停止服务，确保悬浮窗关闭完成
+            handler.postDelayed(() -> {
+                System.out.println("任务完成，停止服务");
+                stopSelf();
+            }, 500);
             return;
         }
 
-        // 执行当前点击
-        AutoClickService.performClickAt(clickX, clickY);
-        System.out.println("执行第 " + (currentClick + 1) + " 次点击");
+        // 每次点击前都使用最新的坐标（可能被拖拽标记更新）
+        System.out.println("准备执行第 " + (currentClick + 1) + "/" + clickCount + " 次点击，当前坐标: (" + clickX + ", " + clickY + ")");
+
+        boolean success = AutoClickService.performClickAt(clickX, clickY);
+        System.out.println("执行第 " + (currentClick + 1) + "/" + clickCount + " 次点击完成，结果: " + success);
 
         // 如果还有下次点击，计算延迟时间
         if (currentClick + 1 < clickCount) {
             int nextDelay = baseInterval;
-            
+
             // 如果有随机范围，使用随机间隔
             if (randomRange > 0) {
                 // 在基础间隔基础上增加随机时间
                 nextDelay += random.nextInt(randomRange + 1);
             }
-            
+
             System.out.println("下一次点击延迟: " + nextDelay + "ms (基础: " + baseInterval + "ms, 随机: " + (nextDelay - baseInterval) + "ms)");
             handler.postDelayed(() -> executeClickSequence(currentClick + 1), nextDelay);
         } else {
-            // 最后一次点击，直接完成
-            executeClickSequence(currentClick + 1);
+            // 最后一次点击，直接递归调用完成
+            handler.postDelayed(() -> executeClickSequence(currentClick + 1), 100);
         }
     }
 
@@ -162,6 +204,15 @@ public class ScheduleKeepAliveService extends Service {
         if (scheduleRunnable != null && handler != null) {
             handler.removeCallbacks(scheduleRunnable);
         }
+
+        // 取消注册广播接收器
+        try {
+            unregisterReceiver(coordinateReceiver);
+        } catch (Exception e) {
+            // 忽略
+        }
+
+        System.out.println("ScheduleKeepAliveService 已销毁");
     }
 
     @Override

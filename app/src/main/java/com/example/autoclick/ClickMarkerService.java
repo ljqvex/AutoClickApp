@@ -6,11 +6,11 @@ import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ImageView;
 
 public class ClickMarkerService extends Service {
     private WindowManager windowManager;
@@ -55,22 +55,34 @@ public class ClickMarkerService extends Service {
         }
 
         try {
-            // 移除旧的标记
             removeMarker();
 
             // 使用布局文件创建标记视图
             LayoutInflater inflater = LayoutInflater.from(this);
             markerView = inflater.inflate(R.layout.click_marker, null);
 
-            // 设置窗口参数
+            // 测量标记视图的实际大小
+            markerView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+            int markerWidth = markerView.getMeasuredWidth();
+            int markerHeight = markerView.getMeasuredHeight();
+
+            // 如果测量结果为0，使用默认值
+            if (markerWidth <= 0) markerWidth = dpToPx(40);
+            if (markerHeight <= 0) markerHeight = dpToPx(40);
+
+            // 设置窗口参数 - 添加不受其他窗口影响的标志
             WindowManager.LayoutParams params;
+            int flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                    | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 params = new WindowManager.LayoutParams(
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                        flags,
                         PixelFormat.TRANSLUCENT
                 );
             } else {
@@ -78,18 +90,18 @@ public class ClickMarkerService extends Service {
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.TYPE_PHONE,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                        flags,
                         PixelFormat.TRANSLUCENT
                 );
             }
 
             params.gravity = Gravity.TOP | Gravity.START;
-            params.x = x - 20; // 居中偏移
-            params.y = y - 20; // 居中偏移
+            // 精确居中：使用实际测量尺寸
+            params.x = x - markerWidth / 2;
+            params.y = y - markerHeight / 2;
 
             windowManager.addView(markerView, params);
-            System.out.println("点击标记已显示");
+            System.out.println("点击标记已显示，实际尺寸: " + markerWidth + "x" + markerHeight + "，位置: (" + params.x + ", " + params.y + ")");
 
         } catch (Exception e) {
             System.out.println("显示点击标记失败: " + e.getMessage());
@@ -107,6 +119,14 @@ public class ClickMarkerService extends Service {
             }
             markerView = null;
         }
+    }
+
+    /**
+     * dp转px
+     */
+    private int dpToPx(int dp) {
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        return Math.round(dp * displayMetrics.density);
     }
 
     private boolean checkOverlayPermission() {
