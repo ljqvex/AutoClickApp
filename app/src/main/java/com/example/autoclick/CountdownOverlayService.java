@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.provider.Settings;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -68,14 +69,10 @@ public class CountdownOverlayService extends Service {
             // 移除旧的视图
             removeOverlayView();
 
-            // 创建倒计时文本视图
-            tvCountdown = new TextView(this);
-            tvCountdown.setText("倒计时");
-            tvCountdown.setTextColor(0xFFFFFFFF);
-            tvCountdown.setTextSize(18);
-            tvCountdown.setBackgroundColor(0x99333333); // 浅灰黑背景
-            tvCountdown.setPadding(30, 15, 30, 15);
-            tvCountdown.setGravity(Gravity.CENTER);
+            // 使用布局文件创建倒计时视图
+            LayoutInflater inflater = LayoutInflater.from(this);
+            overlayView = inflater.inflate(R.layout.overlay_countdown, null);
+            tvCountdown = overlayView.findViewById(R.id.tv_overlay_countdown);
 
             // 设置窗口参数
             WindowManager.LayoutParams params;
@@ -103,7 +100,6 @@ public class CountdownOverlayService extends Service {
             params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
             params.y = 50; // 距离顶部50像素
 
-            overlayView = tvCountdown;
             windowManager.addView(overlayView, params);
             System.out.println("倒计时悬浮窗已创建");
 
@@ -141,6 +137,17 @@ public class CountdownOverlayService extends Service {
     private void updateCountdownDisplay(long remainingTime) {
         if (tvCountdown == null) return;
 
+        // 根据剩余时间设置颜色
+        int textColor;
+        if (remainingTime > 60000) { // 大于1分钟 - 绿色
+            textColor = 0xFF00FF00;
+        } else if (remainingTime > 10000) { // 大于10秒小于1分钟 - 黄色
+            textColor = 0xFFFFFF00;
+        } else { // 10秒内 - 红色
+            textColor = 0xFFFF0000;
+        }
+        tvCountdown.setTextColor(textColor);
+
         long hours = remainingTime / (1000 * 60 * 60);
         long minutes = (remainingTime % (1000 * 60 * 60)) / (1000 * 60);
         long seconds = (remainingTime % (1000 * 60)) / 1000;
@@ -158,7 +165,7 @@ public class CountdownOverlayService extends Service {
                     "%02d.%03d", seconds, milliseconds);
         }
 
-        tvCountdown.setText("倒计时: " + countdownText);
+        tvCountdown.setText(countdownText);
     }
 
     private void removeOverlayView() {

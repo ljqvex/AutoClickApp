@@ -7,9 +7,10 @@ import android.os.Build;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.TextView;
+import android.widget.ImageView;
 
 public class ClickMarkerService extends Service {
     private WindowManager windowManager;
@@ -57,13 +58,9 @@ public class ClickMarkerService extends Service {
             // 移除旧的标记
             removeMarker();
 
-            // 创建标记视图
-            TextView markerText = new TextView(this);
-            markerText.setText("●");
-            markerText.setTextColor(0xFFFF0000); // 红色
-            markerText.setTextSize(24);
-            markerText.setBackgroundColor(0x80FFFFFF); // 半透明白色背景
-            markerText.setPadding(5, 5, 5, 5);
+            // 使用布局文件创建标记视图
+            LayoutInflater inflater = LayoutInflater.from(this);
+            markerView = inflater.inflate(R.layout.click_marker, null);
 
             // 设置窗口参数
             WindowManager.LayoutParams params;
@@ -88,10 +85,9 @@ public class ClickMarkerService extends Service {
             }
 
             params.gravity = Gravity.TOP | Gravity.START;
-            params.x = x - 25; // 居中偏移
-            params.y = y - 25; // 居中偏移
+            params.x = x - 20; // 居中偏移
+            params.y = y - 20; // 居中偏移
 
-            markerView = markerText;
             windowManager.addView(markerView, params);
             System.out.println("点击标记已显示");
 
