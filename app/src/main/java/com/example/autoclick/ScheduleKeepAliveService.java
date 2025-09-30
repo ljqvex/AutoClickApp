@@ -25,10 +25,12 @@ public class ScheduleKeepAliveService extends Service {
     private Runnable scheduleRunnable;
     private long targetTime;
     private int clickX, clickY; // 实时更新的坐标
-    private int clickCount;
+    private double clickDurationSeconds;  // 改为持续时间（秒）
     private int baseInterval;
     private int randomRange;
     private Random random;
+    private long clickingStartTime;  // 点击开始时间
+    private long clickingEndTime;    // 点击结束时间
 
     // 坐标更新接收器
     private BroadcastReceiver coordinateReceiver = new BroadcastReceiver() {
@@ -66,7 +68,7 @@ public class ScheduleKeepAliveService extends Service {
             targetTime = intent.getLongExtra("targetTime", 0);
             clickX = intent.getIntExtra("clickX", 0);
             clickY = intent.getIntExtra("clickY", 0);
-            clickCount = intent.getIntExtra("clickCount", 1);
+            clickDurationSeconds = intent.getDoubleExtra("clickDurationSeconds", 5.0);  // 改为持续时间
             baseInterval = intent.getIntExtra("baseInterval", 300);
             randomRange = intent.getIntExtra("randomRange", 0);
 
@@ -129,15 +131,28 @@ public class ScheduleKeepAliveService extends Service {
             return;
         }
 
+        // 记录开始时间
+        clickingStartTime = System.currentTimeMillis();
+        clickingEndTime = clickingStartTime + (long)(clickDurationSeconds * 1000);  // 转换为毫秒
         
-        executeClickSequence(0);
+        System.out.println("开始持续点击: " + clickDurationSeconds + "秒, 结束时间: " + clickingEndTime);
+        
+        // 开始点击循环
+        executeClickLoop();
     }
 
-    private void executeClickSequence(int currentClick) {
-        if (currentClick >= clickCount) {
-            // 所有点击完成后，先关闭悬浮窗，再停止服务
+    private void executeClickLoop() {
+        long currentTime = System.currentTimeMillis();
+        
+        // 执行一次点击
+        boolean success = AutoClickService.performClickAt(clickX, clickY);
+        System.out.println("执行点击在 (" + clickX + ", " + clickY + "), 结果: " + success);
+        
+        // 检查是否已经超过持续时间
+        if (currentTime >= clickingEndTime) {
+            // 持续时间结束，关闭悬浮窗和服务
+            System.out.println("点击完成, 实际持续: " + (currentTime - clickingStartTime) + "ms");
             
-
             // 发送关闭悬浮窗的指令
             Intent closeCountdownIntent = new Intent(this, CountdownOverlayService.class);
             stopService(closeCountdownIntent);
@@ -154,34 +169,22 @@ public class ScheduleKeepAliveService extends Service {
 
             // 延迟一下再停止服务，确保悬浮窗关闭完成
             handler.postDelayed(() -> {
-                
                 stopSelf();
             }, 500);
             return;
         }
 
-        // 每次点击前都使用最新的坐标（可能被拖拽标记更新）
-        
-
-        boolean success = AutoClickService.performClickAt(clickX, clickY);
-        
-
-        // 如果还有下次点击，计算延迟时间
-        if (currentClick + 1 < clickCount) {
-            int nextDelay = baseInterval;
-
-            // 如果有随机范围，使用随机间隔
-            if (randomRange > 0) {
-                // 在基础间隔基础上增加随机时间
-                nextDelay += random.nextInt(randomRange + 1);
-            }
-
-            
-            handler.postDelayed(() -> executeClickSequence(currentClick + 1), nextDelay);
-        } else {
-            // 最后一次点击，直接递归调用完成
-            handler.postDelayed(() -> executeClickSequence(currentClick + 1), 100);
+        // 计算下次点击的延迟时间
+        int nextDelay = baseInterval;
+        if (randomRange > 0) {
+            // 在基础间隔基础上增加随机时间
+            nextDelay += random.nextInt(randomRange + 1);
         }
+
+        System.out.println("下次点击延迟: " + nextDelay + "ms");
+        
+        // 延迟后继续下一次点击
+        handler.postDelayed(this::executeClickLoop, nextDelay);
     }
 
     private void createNotificationChannel() {

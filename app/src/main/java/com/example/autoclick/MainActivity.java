@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isTaskRunning = false;
 
     // 点击参数
-    private int totalClickCount = 1;
+    private double clickDurationSeconds = 5.0;  // 改为持续时间（秒）
     private int baseInterval = 200;
     private int randomRange = 100;
     private Random random = new Random();
@@ -170,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
         btnStopClick.setOnClickListener(this::onStopClickClick);
         btnClearMarker.setOnClickListener(this::onClearMarkerClick);
 
-        // 点击次数变化监听
+        // 持续时间变化监听
         etClickCount.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -197,23 +197,23 @@ public class MainActivity extends AppCompatActivity {
         etSecond.setText(String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.SECOND)));
         etMillisecond.setText("0");
         etClickCount.setText("5");
-        etClickInterval.setText("200");
+        etClickInterval.setText("180");
         etRandomRange.setText("100");
         updateIntervalVisibility();
     }
 
     private void updateIntervalVisibility() {
         try {
-            String countText = etClickCount.getText().toString();
-            if (countText.isEmpty()) {
+            String durationText = etClickCount.getText().toString();
+            if (durationText.isEmpty()) {
                 layoutInterval.setVisibility(View.GONE);
                 return;
             }
             
-            int count = Integer.parseInt(countText);
-            // 大于1次就显示间隔设置
-            layoutInterval.setVisibility(count > 1 ? View.VISIBLE : View.GONE);
-            System.out.println("点击次数: " + count + ", 间隔设置可见性: " + (count > 1));
+            double duration = Double.parseDouble(durationText);
+            // 持续时间大于0就显示间隔设置
+            layoutInterval.setVisibility(duration > 0 ? View.VISIBLE : View.GONE);
+            System.out.println("持续时间: " + duration + "秒, 间隔设置可见性: " + (duration > 0));
         } catch (NumberFormatException e) {
             layoutInterval.setVisibility(View.GONE);
         }
@@ -328,13 +328,13 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
 
-            int count = Integer.parseInt(etClickCount.getText().toString());
-            if (count <= 0) {
-                showToast("点击次数必须大于0");
+            double duration = Double.parseDouble(etClickCount.getText().toString());
+            if (duration <= 0) {
+                showToast("持续时间必须大于0");
                 return false;
             }
 
-            if (count > 1) {
+            if (duration > 0) {
                 int interval = Integer.parseInt(etClickInterval.getText().toString());
                 int range = Integer.parseInt(etRandomRange.getText().toString());
                 if (interval <= 0 || range < 0) {
@@ -356,8 +356,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void parseInputs() {
-        totalClickCount = Integer.parseInt(etClickCount.getText().toString());
-        if (totalClickCount > 1) {
+        clickDurationSeconds = Double.parseDouble(etClickCount.getText().toString());
+        if (clickDurationSeconds > 0) {
             baseInterval = Integer.parseInt(etClickInterval.getText().toString());
             randomRange = Integer.parseInt(etRandomRange.getText().toString());
         } else {
@@ -407,7 +407,7 @@ public class MainActivity extends AppCompatActivity {
         keepAliveIntent.putExtra("targetTime", targetTimeMillis);
         keepAliveIntent.putExtra("clickX", clickX);
         keepAliveIntent.putExtra("clickY", clickY);
-        keepAliveIntent.putExtra("clickCount", totalClickCount);
+        keepAliveIntent.putExtra("clickDurationSeconds", clickDurationSeconds);  // 改为持续时间
         keepAliveIntent.putExtra("baseInterval", baseInterval);
         keepAliveIntent.putExtra("randomRange", randomRange);
         startService(keepAliveIntent);
